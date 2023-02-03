@@ -49,7 +49,7 @@ Description
 #include "pimpleControl.H"
 #include "ABL.H"
 #include "adjustPhiExtended.H"
-#include "horizontalAxisWindTurbinesALMOpenFAST.H"
+#include "horizontalAxisWindTurbinesALMAdvanced.H"
 
 
 
@@ -174,8 +174,6 @@ int main(int argc, char *argv[])
              << "  ClockTime = " << runTime.elapsedClockTime() << " s"
              << nl << nl << nl << nl << endl;
     }
-
-    actuatorTurbineArray.end();
 
     Info << "Ending the simulation" << endl;
 

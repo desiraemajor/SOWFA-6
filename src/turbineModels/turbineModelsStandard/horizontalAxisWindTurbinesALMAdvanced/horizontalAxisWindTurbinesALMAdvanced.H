@@ -994,7 +994,7 @@ public:
         void update();
 
     //- Return force.
-    volVectorField& force();
+    volVectorField& source();
         
 };
 

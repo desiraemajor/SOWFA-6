@@ -366,7 +366,7 @@
 
     // - Wind turbine actuator line/disk array [m/s^2].
     Info << "Creating actuator disk/line wind turbine array" << endl;
-    turbineModels::horizontalAxisWindTurbinesALMOpenFAST actuatorTurbineArray(U);
+    turbineModels::horizontalAxisWindTurbinesALMAdvanced actuatorTurbineArray(U);
     
     // Allows the user to apply body force with Rhie-Chow type interpolation for stabilization. See:
     //

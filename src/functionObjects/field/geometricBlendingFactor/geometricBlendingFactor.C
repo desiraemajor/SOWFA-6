@@ -223,8 +223,8 @@ Foam::functionObjects::geometricBlendingFactor::geometricBlendingFactor
     tolerance_(0.001),
 
     dict_(dict)
-{
 
+{
     // Read the dictionary input for this function object.
     read(dict_);
 
@@ -319,7 +319,7 @@ bool Foam::functionObjects::geometricBlendingFactor::read
         gridCellResolution_ = dict.lookupOrDefault<Switch>("useGridCellResolution", false);
 
         gridCellResolutionBlendingTable_ = Function1<scalar>::New("gridCellResolutionBlendingTable",dict);
-    
+
         gridCellResolutionName_ = dict.lookupOrDefault<word>("gridCellResolutionName", "gridCellResolution");
 
         tolerance_ = 0.001;

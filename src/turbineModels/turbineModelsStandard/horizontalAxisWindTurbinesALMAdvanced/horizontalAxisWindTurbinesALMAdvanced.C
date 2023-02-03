@@ -995,9 +995,23 @@ horizontalAxisWindTurbinesALMAdvanced::horizontalAxisWindTurbinesALMAdvanced
         generatorPower.append(0.0);
 
         // Define the size of the cell-containing-actuator-point-sampling ID list and set to -1.
-        bladeMinDisCellID.append(List<List<int> >(NumBl[j], List<int>(numBladePoints[i],-1)));
+        bladeMinDisCellID[i].setSize(NumBl[j]);
+        for (int k = 0; k < NumBl[j]; k++)
+        {
+            bladeMinDisCellID[i][k].setSize(numBladePoints[i]);
+            for (int m = 0; m < numBladePoints[i]; m++)
+            {
+                bladeMinDisCellID[i][k][m] = -1;
+            }
+        }
+
         nacelleMinDisCellID.append(-1);
-        towerMinDisCellID.append(List<int>(numTowerPoints[i],-1));
+ 
+        towerMinDisCellID[i].setSize(numTowerPoints[i]);
+        for (int k = 0; k < numTowerPoints[i]; k++)
+        {
+            towerMinDisCellID[i][k] = -1;
+        }
 
         DynamicList<label> influenceCellsI;
         bladeInfluenceCells.append(influenceCellsI);
@@ -4371,7 +4385,7 @@ void horizontalAxisWindTurbinesALMAdvanced::printDebug()
 }
 
 
-volVectorField& horizontalAxisWindTurbinesALMAdvanced::force()
+volVectorField& horizontalAxisWindTurbinesALMAdvanced::source()
 {
     // Return the body force field to the solver
     return bodyForce;
