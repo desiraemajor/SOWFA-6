@@ -577,7 +577,7 @@ private:
             //- List of cell ID that contains a certain actuator line velocity sampling 
             //  point on theprocessor in control of that point.  If the value is -1,
             //  then this processor is not in control of this point.
-            DynamicList<List<List<label> > > bladeMinDisCellID;
+            DynamicList<DynamicList<List<label> > > bladeMinDisCellID;
             DynamicList<label> nacelleMinDisCellID;
             DynamicList<List<label> > towerMinDisCellID;
 

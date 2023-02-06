@@ -700,6 +700,11 @@ horizontalAxisWindTurbinesALMAdvanced::horizontalAxisWindTurbinesALMAdvanced
 
     bladePointAirfoil.setSize(numTurbines);
     towerPointAirfoil.setSize(numTurbines);
+
+    bladeMinDisCellID.setSize(numTurbines);
+    nacelleMinDisCellID.setSize(numTurbines);
+    towerMinDisCellID.setSize(numTurbines);
+
     for(int i = 0; i < numTurbines; i++)
     {
         int j = turbineTypeID[i];
@@ -745,10 +750,8 @@ horizontalAxisWindTurbinesALMAdvanced::horizontalAxisWindTurbinesALMAdvanced
         bladePointThickness.append(List<List<scalar> >(NumBl[j], List<scalar>(numBladePoints[i],0.0)));
         bladePointUserDef.append(List<List<scalar> >(NumBl[j], List<scalar>(numBladePoints[i],0.0)));
         bladePointAirfoil[i].setSize(NumBl[j]);
-      //bladePointAirfoil.append(List<List<label> >(NumBl[j], List<label>(numBladePoints[i],0)));
         for(int k = 0; k < NumBl[j]; k++)
         {
-
             bladePointAirfoil[i][k].setSize(numBladePoints[i]);
             vector root = rotorApex[i];
             scalar beta = PreCone[j][k] - ShftTilt[j];
@@ -1005,7 +1008,7 @@ horizontalAxisWindTurbinesALMAdvanced::horizontalAxisWindTurbinesALMAdvanced
             }
         }
 
-        nacelleMinDisCellID.append(-1);
+        nacelleMinDisCellID[i] = -1;
  
         towerMinDisCellID[i].setSize(numTowerPoints[i]);
         for (int k = 0; k < numTowerPoints[i]; k++)
@@ -2096,7 +2099,7 @@ void horizontalAxisWindTurbinesALMAdvanced::computeNacellePointWindVectors()
         vector velocity(vector::zero);
         label cellID = nacelleMinDisCellID[i];
         vector point = nacelleSamplePoint[i];
-
+        
         if(cellID != -1)
         {
 
