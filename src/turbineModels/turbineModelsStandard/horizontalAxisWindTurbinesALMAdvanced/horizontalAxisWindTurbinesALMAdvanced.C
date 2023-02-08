@@ -3771,6 +3771,7 @@ void horizontalAxisWindTurbinesALMAdvanced::update()
     computeBladeBodyForce();
     computeNacelleBodyForce();
     computeTowerBodyForce();
+    bodyForce.correctBoundaryConditions();
 
     // Print turbine output to file.
     outputIndex++;
