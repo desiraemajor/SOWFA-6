@@ -4,6 +4,7 @@ sinclude $(RULES)/mplib$(WM_MPLIB)
 EXE_INC = \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
+    -I$(SOWFA_DIR)/src/meshTools/lnInclude \
     $(PFLAGS) \
     $(PINC) \
     -I$(OPENFAST_DIR)/include
@@ -11,6 +12,8 @@ EXE_INC = \
 LIB_LIBS = \
     -lfiniteVolume \
     -lmeshTools \
+    -L$(SOWFA_LIBBIN) \
+    -lSOWFAmeshTools \
     -L$(OPENFAST_DIR)/lib \
     -laerodyn14lib \
     -laerodynlib \

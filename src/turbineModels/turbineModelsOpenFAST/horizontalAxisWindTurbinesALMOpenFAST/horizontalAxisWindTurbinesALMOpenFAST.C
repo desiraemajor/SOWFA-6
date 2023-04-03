@@ -526,6 +526,7 @@ void horizontalAxisWindTurbinesALMOpenFAST::initializeArrays()
     bladeMinDisCellID.setSize(numTurbines);
     nacelleMinDisCellID.setSize(numTurbines);
     towerMinDisCellID.setSize(numTurbines);
+    bladeInfluenceCellsGrouped.setSize(numTurbines);
     for (int i = 0; i < numTurbines; i++)
     {
         // Blade points.
@@ -725,6 +726,18 @@ void horizontalAxisWindTurbinesALMOpenFAST::initializeArrays()
         nacelleInfluenceCells.append(influenceCellsI);
         towerInfluenceCells.append(influenceCellsI);
 
+      //cartesianMeshSearch bladeMeshSearch_();
+/*
+                            (
+                               mesh_,
+                               vector(0.0, 0.0, 0.0),
+                               vector(1.0, 1.0, 1.0),
+                               vector(1.0, 1.0, 1.0),
+                               bladeInfluenceCells[i]
+                            );
+*/
+      //bladeInfluenceCellsGrouped[i] = bladeMeshSearch_;
+
         bladeProjectionRadius.append(0.0);
         nacelleProjectionRadius.append(0.0);
         towerProjectionRadius.append(0.0);
@@ -911,6 +924,8 @@ void horizontalAxisWindTurbinesALMOpenFAST::updateRotorSearchCells(int turbineNu
     bladeInfluenceCells[i].clear();
     bladeInfluenceCells[i] = influenceCellsI;
     influenceCellsI.clear();
+
+    bladeInfluenceCellsGrouped[i].update(mesh_,bladeInfluenceCells[i],vector(-15.0,-100.0,-100.0),vector(10.0,100.0,100.0),vector(10.0,10.0,10.0));
 }
 
 
@@ -1121,15 +1136,21 @@ void horizontalAxisWindTurbinesALMOpenFAST::updateBladePointControlProcNo()
                 {
                     // Find the cell that the sampling point lies within and the distance
                     // from the sampling point to that cell center.
-                    label cellID = bladeInfluenceCells[i][0];
+                    DynamicList<label> bladeInfluenceCells_ = bladeInfluenceCellsGrouped[i].returnRegionCellIDs(bladeSamplePoints[i][j][k] - bladePointsPerturbVector[i][j][k], 
+                                                                                                                bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]);
+                  //label cellID = bladeInfluenceCells[i][0];
+                    label cellID = bladeInfluenceCells_[0];
                     scalar minDis = mag(mesh_.C()[cellID] - (bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]));
 
-                    forAll(bladeInfluenceCells[i], m)
+                  //forAll(bladeInfluenceCells[i], m)
+                    forAll(bladeInfluenceCells_, m)
                     {
-                        scalar dis = mag(mesh_.C()[bladeInfluenceCells[i][m]] - (bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]));
+                      //scalar dis = mag(mesh_.C()[bladeInfluenceCells[i][m]] - (bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]));
+                        scalar dis = mag(mesh_.C()[bladeInfluenceCells_[m]] - (bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]));
                         if(dis <= minDis)
                         {
-                            cellID = bladeInfluenceCells[i][m];
+                          //cellID = bladeInfluenceCells[i][m];
+                            cellID = bladeInfluenceCells_[m];
                         }
                         minDis = mag(mesh_.C()[cellID] - (bladeSamplePoints[i][j][k] + bladePointsPerturbVector[i][j][k]));
                     }
@@ -2586,16 +2607,22 @@ List<scalar> horizontalAxisWindTurbinesALMOpenFAST::updateBladeBodyForce(int tur
                     vector forceSum = vector::zero;
 
                     // For each influence cell.
-                    forAll(bladeInfluenceCells[i], m)
+                    vector point = bladePoints[i][j][k];
+                    DynamicList<label> bladeInfluenceCells_ = bladeInfluenceCellsGrouped[i].returnRegionCellIDs(point - vector(bladeProjectionRadius[i],bladeProjectionRadius[i],bladeProjectionRadius[i]),
+                                                                                                                point + vector(bladeProjectionRadius[i],bladeProjectionRadius[i],bladeProjectionRadius[i]));
+                  //forAll(bladeInfluenceCells[i], m)
+                    forAll(bladeInfluenceCells_, m)
                     {
                         // Compute the distance between the actuator point and blade point.
                         // - Cartesian coordinates
-                        vector disVector = (mesh_.C()[bladeInfluenceCells[i][m]] - bladePoints[i][j][k]);
+                      //vector disVector = (mesh_.C()[bladeInfluenceCells[i][m]] - bladePoints[i][j][k]);
+                        vector disVector = (mesh_.C()[bladeInfluenceCells_[m]] - bladePoints[i][j][k]);
                         scalar dis = mag(disVector);
 
                         // - local cylindrical coordinates.  Distance in r and theta should be from the blade point, but in x should
                         //   be from the distorted disk surface.
-                        vector cellPointCyl = transformGlobalCartToRotorLocalCyl(mesh_.C()[bladeInfluenceCells[i][m]], turbineNumber);
+                      //vector cellPointCyl = transformGlobalCartToRotorLocalCyl(mesh_.C()[bladeInfluenceCells[i][m]], turbineNumber);
+                        vector cellPointCyl = transformGlobalCartToRotorLocalCyl(mesh_.C()[bladeInfluenceCells_[m]], turbineNumber);
                         vector bladePointCyl = transformGlobalCartToRotorLocalCyl(bladePoints[i][j][k], turbineNumber);
                       //Pout << "cellPointCyl = " << cellPointCyl << tab << "cellPointCart = " << mesh_.C()[bladeInfluenceCells[i][m]] << endl;
                       //Pout << "bladePointCyl = " << bladePointCyl << tab << "bladePointCart = " << bladePoints[i][j][k] << endl;
@@ -2629,10 +2656,12 @@ List<scalar> horizontalAxisWindTurbinesALMOpenFAST::updateBladeBodyForce(int tur
                             gBlade[bladeInfluenceCells[i][m]] += spreading;
  
                             // Get the local velocity in the fixed frame of reference.
-                            vector localVelocity = U_[bladeInfluenceCells[i][m]];
+                          //vector localVelocity = U_[bladeInfluenceCells[i][m]];
+                            vector localVelocity = U_[bladeInfluenceCells_[m]];
 
                             // Add on the relative velocity due to blade rotation.
-                            localVelocity += rFromShaft[bladeInfluenceCells[i][m]] * rotorSpeed[i] * bladeAlignedVectors[i][j][k][1];
+                          //localVelocity += rFromShaft[bladeInfluenceCells[i][m]] * rotorSpeed[i] * bladeAlignedVectors[i][j][k][1];
+                            localVelocity += rFromShaft[bladeInfluenceCells_[m]] * rotorSpeed[i] * bladeAlignedVectors[i][j][k][1];
                             Urel[bladeInfluenceCells[i][m]] = localVelocity;
 
                             // Compute the body force contribution.
@@ -2721,10 +2750,12 @@ List<scalar> horizontalAxisWindTurbinesALMOpenFAST::updateBladeBodyForce(int tur
 
                                rotorAxialForceBodySum -= ( mainShaftOrientation[i] & (spreading *
                                                          ( projectionScaling[0]*bladePointForce[i][j][k]
-                                                        + (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells[i][m]];
+                                                        + (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells_[m]];
+                                                      //+ (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells[i][m]];
                                rotorTorqueBodySum +=     ( bladeAlignedVectors[i][j][k][1] & (spreading *
                                                          ( projectionScaling[0]*bladePointForce[i][j][k]
-                                                        + (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells[i][m]] * bladePointRadius[i][j][k];
+                                                        + (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells_[m]] * bladePointRadius[i][j][k];
+                                                      //+ (projectionScaling[1] - projectionScaling[0]) * ((bladePointForce[i][j][k] & mainShaftOrientation[i]) * mainShaftOrientation[i]) ) ) ) * mesh_.V()[bladeInfluenceCells[i][m]] * bladePointRadius[i][j][k];
                             }
                         }
                     }

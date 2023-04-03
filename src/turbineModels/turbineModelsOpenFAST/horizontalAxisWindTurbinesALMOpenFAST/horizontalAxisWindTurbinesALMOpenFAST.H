@@ -66,6 +66,7 @@ SourceFiles
 #include "fvCFD.H"
 #include "Random.H"
 #include "scalarMatrices.H"
+#include "cartesianMeshSearch.H"
 #include "OpenFAST.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -433,6 +434,8 @@ private:
             DynamicList<DynamicList<label> > bladeInfluenceCells;
             DynamicList<DynamicList<label> > towerInfluenceCells;
             DynamicList<DynamicList<label> > nacelleInfluenceCells;
+
+            DynamicList<cartesianMeshSearch> bladeInfluenceCellsGrouped;
 
             //- Actuator element width.
             DynamicList<DynamicList<scalar> > bladeDs;
