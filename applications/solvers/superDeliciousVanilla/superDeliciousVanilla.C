@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
     #include "createControl.H"
     #include "createFields.H"
+  //#include "findPhiFaces.H"
     #include "createTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
             Info << "   Predictor" << endl;
 
             #include "UEqn.H"
+          //#include "printPhi.H"
             #include "turbulenceCorrect.H"
             #include "TEqn.H"
 
@@ -147,6 +149,7 @@ int main(int argc, char *argv[])
                 #include "pEqn.H"
               //#include "turbulenceCorrect.H"
               //#include "TEqn.H"
+                #include "computeDivergence.H"
                 corrIter++;
             }
 
@@ -163,7 +166,7 @@ int main(int argc, char *argv[])
         }
 
         // Compute the continuity errors.
-        #include "computeDivergence.H"
+      //#include "computeDivergence.H"
 
         // Update timeVaryingMappedInletOutlet parameters
         #include "updateFixesValue.H"

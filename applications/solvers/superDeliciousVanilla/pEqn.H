@@ -30,7 +30,8 @@
     // boundary condition on p_rgh is used.
     surfaceScalarField phiFixedFlux = 1.0*phiHbyA;
 
-    adjustPhiExtended(phiFixedFlux, U, p_rgh, coupledInflowPatches);
+    adjustPhi(phiFixedFlux, U, p_rgh);
+  //adjustPhiExtended(phiFixedFlux, U, p_rgh, coupledInflowPatches);
 
     forAll(p_rgh.boundaryField(), patchi)
     {
@@ -74,6 +75,7 @@
         {
             // Calculate the conservative fluxes
             phi = phiHbyA - p_rghEqn.flux();
+          //#include "printPhi.H"
 
             // Explicitly relax pressure for momentum corrector
             p_rgh.relax();
@@ -82,6 +84,7 @@
             // calculated from the relaxed pressure
             U = HbyA + rAU*fvc::reconstruct((phig + phiF - p_rghEqn.flux())/rAUf);
             U.correctBoundaryConditions();
+          //#include "printPhi.H"
             fvOptions.correct(U);
         }
     }
