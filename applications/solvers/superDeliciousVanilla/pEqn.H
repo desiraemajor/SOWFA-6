@@ -13,7 +13,7 @@
     // This is the Boussinesq buoyancy term multipled by the inverse of the A operator.
     Boussinesq.updateBuoyancyTerm();
     surfaceScalarField phig(rAUf * Boussinesq.buoyancyTerm() * mesh.magSf());
-    surfaceScalarField phiS(rAUf * (fvc::flux(fvOptions(U))/mesh.magSf()) & mesh.magSf());
+    surfaceScalarField phiS(rAUf * scalar(fvOptionSourceStabilization) * fvc::flux(fvOptions(U));
 
     // Project HbyA to cell faces and apply a correction for time stepping scheme.
     surfaceScalarField phiHbyA

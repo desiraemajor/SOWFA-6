@@ -29,7 +29,7 @@
                 (
                   - fvc::snGrad(p_rgh)
                   + Boussinesq.buoyancyTerm()
-                  + scalar(fvOptionSourceStabilization) * ((fvc::flux(fvOption(U))/mesh.magSf()) & mesh.magSf())
+                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOption(U))/mesh.magSf()
                 )*mesh.magSf()
             )
         );
