@@ -13,6 +13,7 @@
     // This is the Boussinesq buoyancy term multipled by the inverse of the A operator.
     Boussinesq.updateBuoyancyTerm();
     surfaceScalarField phig(rAUf * Boussinesq.buoyancyTerm() * mesh.magSf());
+    surfaceScalarField phiS(rAUf * (fvc::flux(fvOptions(U))/mesh.magSf()) & mesh.magSf());
 
     // Project HbyA to cell faces and apply a correction for time stepping scheme.
     surfaceScalarField phiHbyA
@@ -39,6 +40,7 @@
     }
 
     phiHbyA += phig;
+    phiHbyA += phiS;
 
     // Update the fixedFluxPressure BCs to ensure flux consistency
     setSnGrad<fixedFluxPressureFvPatchScalarField>
@@ -78,7 +80,11 @@
 
             // Correct the momentum source with the pressure gradient flux
             // calculated from the relaxed pressure
-            U = HbyA + rAU*fvc::reconstruct((phig - p_rghEqn.flux())/rAUf);
+            U = HbyA + rAU*fvc::reconstruct((
+                                                phig 
+                                               +phiS
+                                               -p_rghEqn.flux()
+                                            )/rAUf);
             U.correctBoundaryConditions();
             fvOptions.correct(U);
         }

@@ -11,7 +11,7 @@
       - momentumSpongeLayers.force()
       - momentumPerturbationZones.source()
      ==
-        fvOptions(U)
+        (1.0 - scalar(fvOptionSourceStabilization)) * fvOptions(U)
     );
 
     UEqn.relax();
@@ -29,6 +29,7 @@
                 (
                   - fvc::snGrad(p_rgh)
                   + Boussinesq.buoyancyTerm()
+                  + scalar(fvOptionSourceStabilization) * ((fvc::flux(fvOption(U))/mesh.magSf()) & mesh.magSf())
                 )*mesh.magSf()
             )
         );
