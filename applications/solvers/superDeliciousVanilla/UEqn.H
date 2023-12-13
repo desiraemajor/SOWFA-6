@@ -17,6 +17,7 @@
     UEqn.relax();
 
     fvOptions.constrain(UEqn);
+    #include "updateFvOptionsSource.H"
 
     if (pimple.momentumPredictor())
     {
@@ -29,12 +30,13 @@
                 (
                   - fvc::snGrad(p_rgh)
                   + Boussinesq.buoyancyTerm()
-                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOption(U))/mesh.magSf()
+                  + scalar(fvOptionSourceStabilization) * fvc::flux(fvOptionsVelocitySource)/mesh.magSf()
                 )*mesh.magSf()
             )
         );
 
         fvOptions.correct(U);
+        #include "updateFvOptionsSource.H"
     }
 
     if (pimple.finalPimpleIter() && pimple.finalPISOIter())

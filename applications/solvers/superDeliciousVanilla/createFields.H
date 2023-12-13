@@ -245,4 +245,18 @@ mesh.setFluxRequired(p_rgh.name());
 
 // Allows the user to set fvOptions, such as additional source terms.
 #include "createFvOptions.H"
+volVectorField fvOptionsVelocitySource
+(
+    IOobject     
+    (
+        "fvOptionsVelocitySource",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedVector("fvOptionsVelocitySource",dimForce/dimVolume/dimDensity,vector::zero)
+);
 bool fvOptionSourceStabilization = mesh.schemesDict().lookupOrDefault<bool>("fvOptionSourceStabilization",true);
+
