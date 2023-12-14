@@ -6,7 +6,7 @@
         vectorField fvOptionsVelocitySource_ = fvOptions_.source();
         forAll(fvOptionsVelocitySource_, i)
         {
-            fvOptionsVelocitySource[i] = fvOptionsVelocitySource_[i];
+            fvOptionsVelocitySource[i] = -fvOptionsVelocitySource_[i];
         }
         fvOptionsVelocitySource.correctBoundaryConditions();
     }
