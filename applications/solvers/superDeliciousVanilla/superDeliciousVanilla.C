@@ -49,6 +49,7 @@ Description
 #include "pimpleControl.H"
 #include "ABL.H"
 #include "adjustPhiExtended.H"
+#include "fluxProfileRelations.H"
 //#include "horizontalAxisWindTurbinesALMOpenFAST.H"
 
 
@@ -83,6 +84,10 @@ int main(int argc, char *argv[])
         #include "setDeltaT.H"
 
         word timeNameOld = runTime.timeName();
+
+        fluxProfileRelations aa("smooth");
+        List<scalar> bb = aa.update(1.0, 1.0, 300.0);
+        Info << "utau = " << bb << endl;
 
         runTime++;
 

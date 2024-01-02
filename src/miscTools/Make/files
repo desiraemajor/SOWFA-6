@@ -1,5 +1,6 @@
 windRoseToCartesian/windRoseToCartesian.C
 geometricTransformations/geometricTransformations.C
 adjustPhiExtended/adjustPhiExtended.C
+fluxProfileRelations/fluxProfileRelations.C
 
 LIB = $(SOWFA_LIBBIN)/libSOWFAmiscTools
