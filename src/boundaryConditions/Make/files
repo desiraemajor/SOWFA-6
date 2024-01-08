@@ -1,6 +1,5 @@
 /* Surface Shear Stress Models */
-surfaceStressModels = ./surfaceStressModels
-$(surfaceStressModels)/SchumannGrotzbach/SchumannGrotzbachFvPatchField.C
+surfaceShearStressModel/surfaceShearStressFvPatchField.C
 
 /* Surface Shear Stress Compatible Velocity Boundary Condition */
 surfaceVelocityModels = ./surfaceVelocityModels

@@ -485,6 +485,6 @@
         kappat = turbulence->nut()/Prt;
         kappat.correctBoundaryConditions();    
         qwall.correctBoundaryConditions();    
-        Rwall.correctBoundaryConditions();    
+        Rwall.correctBoundaryConditions();   
         turbulence->validate();
     }

@@ -13,6 +13,14 @@ kappat.correctBoundaryConditions();
 qwall.correctBoundaryConditions();
 Rwall.correctBoundaryConditions();
 
+/*
+label lowerBoundaryID = mesh.boundaryMesh().findPatchID("lower");
+forAll(Rwall.boundaryField()[lowerBoundaryID],i)
+{
+    Info << Rwall.boundaryField()[lowerBoundaryID][i];
+}
+*/
+
 // update the sgs turbulence fields.
 qSgs = -(turbulence->nu()/Pr + kappat)* fvc::grad(T);
 RdevSgs = turbulence->devReff();

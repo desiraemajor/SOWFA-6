@@ -46,9 +46,15 @@ Foam::fluxProfileRelations::fluxProfileRelations
 )
 :
 relType(SMOOTH),
+surfTempOrFlux(TEMPERATURE),
 kappa(0.41),
 B(5.0),
-nu(1.0E-5)
+nu(1.0E-5),
+beta_m(16.0),
+beta_h(16.0),
+gamma_m(5.0),
+gamma_h(5.0),
+alpha_h(0.9)
 
 {
     if (relTypeName == "smooth" ||
@@ -68,7 +74,7 @@ nu(1.0E-5)
         relType = MONIN_OBUKHOV;
     }
 
-    Info << "relType = " << relType << endl;
+  //Info << "relType = " << relType << endl;
 }
 
 
@@ -136,7 +142,7 @@ List<scalar> Foam::fluxProfileRelations::updateSmooth(const scalar zref, const s
     // The solver loop.
     while ((Foam::mag(residual) > tol) && (iter < iterMax))
     {   
-        Info << "iter = " << iter << tab << "utau = " << utau << tab << "residual = " << residual << endl;
+      //Info << "iter = " << iter << tab << "utau = " << utau << tab << "residual = " << residual << endl;
 
         // This is the derivative of velocity magnitude with respect to friction velocity.
         scalar fPrime = ((1.0/kappa)*(1.0 + Foam::log(utau*zref/nu)) + B);

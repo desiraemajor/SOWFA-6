@@ -53,7 +53,7 @@ class fluxProfileRelations
 {
     // Private data
     // - An enumeration holding the type of flux relation to use.
-    enum relationTypeName
+    enum relationType
     {
         SMOOTH,
         MONIN_OBUKHOV,
@@ -68,7 +68,7 @@ class fluxProfileRelations
         TEMPERATURE
     };
 
-    relationTypeName relType;
+    relationType relType;
     surfaceTempOrFlux surfTempOrFlux;
 
     // - Flux relation constants.
