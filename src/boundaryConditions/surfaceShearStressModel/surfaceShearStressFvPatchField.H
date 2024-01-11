@@ -105,11 +105,20 @@ private:
         //- Interpolation scheme used for 'nearestCell' sampling.
         word interpolationScheme;
 
+        //- Sampled velocity field some offset vector away from surface
         vectorField USampled;
 
+        //- Patch name;
+        word patchName;
+
+        //- Output file pointer.
+        autoPtr<OFstream> surfaceFluxHistoryFile;
 
 
     // Private member functions
+       // - Open output file streams.
+       void openOutputFile();
+       void writeOutputFile(scalar uStar, scalar TWall, scalar qWall);
        
 /*
 protected:

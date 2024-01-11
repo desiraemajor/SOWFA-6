@@ -92,6 +92,9 @@ List<scalar> Foam::fluxProfileRelations::update
 (
     const scalar zref,
     const scalar Uzref,
+    const scalar nu,
+    const scalar B,
+    const scalar kappa,
     const scalar Tzref,
     const surfaceTempOrFlux surfTempOrFlux,
     const scalar z0
@@ -103,7 +106,7 @@ List<scalar> Foam::fluxProfileRelations::update
     {
         // Smooth wall case.
         case SMOOTH:
-            fluxes = updateSmooth(zref,Uzref,Tzref);
+            fluxes = updateSmooth(zref,Uzref,nu,B,kappa,Tzref);
             break;
 
 
@@ -117,14 +120,22 @@ List<scalar> Foam::fluxProfileRelations::update
 
         // Default case.
         default:
-            fluxes = updateSmooth(zref,Uzref,Tzref);
+            fluxes = updateMoninObukhov();
             break;
     }
 
     return fluxes;
 }
 
-List<scalar> Foam::fluxProfileRelations::updateSmooth(const scalar zref, const scalar Uzref, const scalar Tzref)
+List<scalar> Foam::fluxProfileRelations::updateSmooth
+(
+    const scalar zref,
+    const scalar Uzref,
+    const scalar nu,
+    const scalar B,
+    const scalar kappa,
+    const scalar Tzref
+)
 {
     // We use a Newton-Raphson solver to solve the log-law equation that is nonlinear in 
     // terms of friction velocity.  This solver method was developed by Prakash Mohan (NREL).
@@ -138,6 +149,7 @@ List<scalar> Foam::fluxProfileRelations::updateSmooth(const scalar zref, const s
   
     // Set the initial guess for friction velocity.
     scalar utau = 0.1;
+  //Info << "nu, B, kappa = " << nu << ", " << B << ", " << kappa << endl;
 
     // The solver loop.
     while ((Foam::mag(residual) > tol) && (iter < iterMax))

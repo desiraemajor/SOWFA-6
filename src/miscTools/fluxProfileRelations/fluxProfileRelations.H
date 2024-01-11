@@ -110,7 +110,10 @@ public:
     // Constructors
 
         //- Construct from components
-        fluxProfileRelations(word relTypeName);
+        fluxProfileRelations
+        (
+            word relTypeName
+        );
 
 
 
@@ -133,6 +136,9 @@ public:
     (
         const scalar zref,
         const scalar Uzref,
+        const scalar nu = 1.0E-5,
+        const scalar B = 5.0,
+        const scalar kappa = 0.41,
         const scalar Tzref = 300.0,
         const surfaceTempOrFlux surTempOrFlux = FLUX,
         const scalar z0 = 0.1
@@ -145,6 +151,9 @@ public:
     (
         const scalar zref, 
         const scalar Uzref, 
+        const scalar nu,
+        const scalar B,
+        const scalar kappa,
         const scalar Tzref
     );
 
