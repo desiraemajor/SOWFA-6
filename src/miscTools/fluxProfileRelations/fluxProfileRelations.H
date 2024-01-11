@@ -68,8 +68,8 @@ class fluxProfileRelations
         TEMPERATURE
     };
 
+    // - Type of flux profile relation
     relationType relType;
-    surfaceTempOrFlux surfTempOrFlux;
 
     // - Flux relation constants.
     // - von Karman constant
@@ -87,6 +87,15 @@ class fluxProfileRelations
     scalar gamma_m;
     scalar gamma_h;
     scalar alpha_h;
+    scalar z0;
+
+    // - Flux relation velocities, temperatures, fluxes, sampling height
+    scalar zref;
+    scalar Uref;
+    scalar Tref;
+    scalar Tsurf;
+    scalar Qsurf;
+    word surfTempOrFluxName;
 
 
 
@@ -134,38 +143,34 @@ public:
     //   surface temperature, so in that case, the zero flux values are returned.
     List<scalar> update
     (
-        const scalar zref,
-        const scalar Uzref,
-        const scalar nu = 1.0E-5,
-        const scalar B = 5.0,
-        const scalar kappa = 0.41,
-        const scalar Tzref = 300.0,
-        const surfaceTempOrFlux surTempOrFlux = FLUX,
-        const scalar z0 = 0.1
+        const scalar zref_,
+        const scalar Uref_,
+        const scalar kappa_ = 0.4,
+        const scalar B_ = 5.0,
+        const scalar nu_ = 1.0E-5,
+        const scalar beta_m_ = 16.0,
+        const scalar beta_h_ = 16.0,
+        const scalar gamma_m_ = 5.0,
+        const scalar gamma_h_ = 5.0,
+        const scalar alpha_h_ = 0.9,
+        const scalar z0_ = 0.1,
+        const scalar Tref_ = 300.0, 
+        const scalar Tsurf_ = 300.0,
+        const scalar Qsurf_ = 0.0,
+        const word surfTempOrFluxName = "temperature"
     );
 
     // - This is the update function for smooth walls that uses the smooth-
     //   wall log profile to give friction velocity given a velocity 
     //   magnitude at a reference height on the log profile.
-    List<scalar> updateSmooth
-    (
-        const scalar zref, 
-        const scalar Uzref, 
-        const scalar nu,
-        const scalar B,
-        const scalar kappa,
-        const scalar Tzref
-    );
+    List<scalar> updateSmooth();
 
     // - This is the update function for rough wall atmospheric flows that
     //   uses the similarity laws of Monin and Obukhov to return friction
     //   velocity and surface temperature flux or surface temperature given the 
     //   velocity magnitude and potential temperature at reference height or
     //   surface heat flux. 
-    List<scalar> updateMoninObukhov
-    (
-    );
-
+    List<scalar> updateMoninObukhov();
 
 };
 

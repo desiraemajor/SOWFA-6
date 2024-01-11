@@ -45,16 +45,7 @@ Foam::fluxProfileRelations::fluxProfileRelations
     word relTypeName
 )
 :
-relType(SMOOTH),
-surfTempOrFlux(TEMPERATURE),
-kappa(0.41),
-B(5.0),
-nu(1.0E-5),
-beta_m(16.0),
-beta_h(16.0),
-gamma_m(5.0),
-gamma_h(5.0),
-alpha_h(0.9)
+relType(SMOOTH)
 
 {
     if (relTypeName == "smooth" ||
@@ -90,33 +81,77 @@ Foam::fluxProfileRelations::~fluxProfileRelations()
 
 List<scalar> Foam::fluxProfileRelations::update
 (
-    const scalar zref,
-    const scalar Uzref,
-    const scalar nu,
-    const scalar B,
-    const scalar kappa,
-    const scalar Tzref,
-    const surfaceTempOrFlux surfTempOrFlux,
-    const scalar z0
+    const scalar zref_,
+    const scalar Uref_,
+    const scalar kappa_,
+    const scalar B_,
+    const scalar nu_,
+    const scalar beta_m_,
+    const scalar beta_h_,
+    const scalar gamma_m_,
+    const scalar gamma_h_,
+    const scalar alpha_h_,
+    const scalar z0_,
+    const scalar Tref_,
+    const scalar Tsurf_,
+    const scalar Qsurf_,
+    const word surfTempOrFluxName
 )
 {
+    // Update the class variables using those passed into this function.
+    zref = zref_;
+    Uref = Uref_;
+    Tref = Tref_;
+    Tsurf = Tsurf_;
+    Qsurf = Qsurf_;
+    kappa = kappa_;
+    B = B_;
+    nu = nu_;
+    beta_m = beta_m_;
+    beta_h = beta_h_;
+    gamma_m = gamma_m_;
+    gamma_h = gamma_h_;
+    alpha_h = alpha_h_;
+    z0 = z0_;
+
+
+    // Set the surface temperature or flux enumerator.
+    surfaceTempOrFlux surfTempOrFlux = TEMPERATURE;
+ 
+    if (surfTempOrFluxName == "temperature" ||
+        surfTempOrFluxName == "Temperature" ||
+        surfTempOrFluxName == "temp" ||
+        surfTempOrFluxName == "Temp")
+    {
+        surfTempOrFlux = TEMPERATURE;
+    }
+    else if (surfTempOrFluxName == "flux" ||
+             surfTempOrFluxName == "Flux" ||
+             surfTempOrFluxName == "tempFlux" ||
+             surfTempOrFluxName == "TempFlux" ||
+             surfTempOrFluxName == "temperatureFlux" ||
+             surfTempOrFluxName == "TemperatureFlux")
+    {
+        surfTempOrFlux = FLUX;
+    }
+
+
+    // Initialize the list that will return friction velocity, surface temperature flux, and surface temperature.
     List<scalar> fluxes(3, 0.0);
 
+ 
+    // Select and call the specific update type.
     switch (relType)
     {
         // Smooth wall case.
         case SMOOTH:
-            fluxes = updateSmooth(zref,Uzref,nu,B,kappa,Tzref);
+            fluxes = updateSmooth();
             break;
-
-
 
         // Rough wall Monin-Obukhov case.
         case MONIN_OBUKHOV:
             fluxes = updateMoninObukhov();
             break;
-
-
 
         // Default case.
         default:
@@ -127,15 +162,9 @@ List<scalar> Foam::fluxProfileRelations::update
     return fluxes;
 }
 
-List<scalar> Foam::fluxProfileRelations::updateSmooth
-(
-    const scalar zref,
-    const scalar Uzref,
-    const scalar nu,
-    const scalar B,
-    const scalar kappa,
-    const scalar Tzref
-)
+
+
+List<scalar> Foam::fluxProfileRelations::updateSmooth()
 {
     // We use a Newton-Raphson solver to solve the log-law equation that is nonlinear in 
     // terms of friction velocity.  This solver method was developed by Prakash Mohan (NREL).
@@ -160,7 +189,7 @@ List<scalar> Foam::fluxProfileRelations::updateSmooth
         scalar fPrime = ((1.0/kappa)*(1.0 + Foam::log(utau*zref/nu)) + B);
 
         // The residual used to update the friction velocity.
-        residual = (utau*((1.0/kappa)*Foam::log(utau*zref/nu) + B) - Uzref) / fPrime;
+        residual = (utau*((1.0/kappa)*Foam::log(utau*zref/nu) + B) - Uref) / fPrime;
 
         // Update the friction velocity.
         utau -= residual;
@@ -169,8 +198,8 @@ List<scalar> Foam::fluxProfileRelations::updateSmooth
     // Return the friction velocity, surface temperature flux, and surface temperature.   
     List<scalar> fluxes(3, 0.0);
     fluxes[0] = utau;
-    fluxes[1] = 0.0;
-    fluxes[2] = Tzref;
+    fluxes[1] = Qsurf;
+    fluxes[2] = Tsurf;
 
     return fluxes;
 }

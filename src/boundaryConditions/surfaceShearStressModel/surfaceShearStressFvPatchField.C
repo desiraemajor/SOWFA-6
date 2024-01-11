@@ -54,6 +54,7 @@ surfaceShearStressFvPatchField
     alpha_h(0.9),
     B(5.0),
     z0(p.size(), 0.1),
+    fluxProfileRelTypeName("MoninObukhov"),
     avgTypeName("none"),
     avgType(averagingType::NONE),
     fluctModelName("none"),
@@ -86,9 +87,10 @@ surfaceShearStressFvPatchField
     B(dict.lookupOrDefault<scalar>("B",5.0)),
   //z0(dict.lookupOrDefault<scalarField>("z0",scalarField(p.size(),0.1))),
   //z0("z0", dict, p.size()),
-    avgTypeName(dict.lookupOrDefault<word>("averageTypeName","none")),
+    fluxProfileRelTypeName(dict.lookupOrDefault<word>("fluxProfileRelationType","MoninObukhov")),
+    avgTypeName(dict.lookupOrDefault<word>("averageType","none")),
     avgType(averagingType::NONE),
-    fluctModelName(dict.lookupOrDefault<word>("fluctuationModelName","none")),
+    fluctModelName(dict.lookupOrDefault<word>("fluctuationModel","none")),
     fluctModel(fluctuationModel::NONE),
     nu(8.0E-6),
     interpolationScheme(dict.lookupOrDefault<word>("interpolationScheme","cell"))
@@ -144,6 +146,7 @@ surfaceShearStressFvPatchField
     alpha_h(ptf.alpha_h),
     B(ptf.B),
     z0(ptf.z0, mapper),
+    fluxProfileRelTypeName(ptf.fluxProfileRelTypeName),
     avgTypeName(ptf.avgTypeName),
     avgType(ptf.avgType),
     fluctModelName(ptf.fluctModelName),
@@ -183,6 +186,7 @@ surfaceShearStressFvPatchField
     alpha_h(ptf.alpha_h),
     B(ptf.B),
     z0(ptf.z0),
+    fluxProfileRelTypeName(ptf.fluxProfileRelTypeName),
     avgTypeName(ptf.avgTypeName),
     avgType(ptf.avgType),
     fluctModelName(ptf.fluctModelName),
@@ -213,6 +217,7 @@ surfaceShearStressFvPatchField
     alpha_h(ptf.alpha_h),
     B(ptf.B),
     z0(ptf.z0),
+    fluxProfileRelTypeName(ptf.fluxProfileRelTypeName),
     avgTypeName(ptf.avgTypeName),
     avgType(ptf.avgType),
     fluctModelName(ptf.fluctModelName),
@@ -289,7 +294,8 @@ void Foam::surfaceShearStressFvPatchField::evaluate(const Pstream::commsTypes)
         scalar v = USampled[faceI].y();
         scalar U = max(Foam::sqrt(Foam::sqr(u) + Foam::sqr(v)), 1.0E-5);
 
-        fluxProfileRelations fluxProfileRel("smooth");
+        // Declare an instance of the flux-profile-relations class.
+        fluxProfileRelations fluxProfileRel(fluxProfileRelTypeName);
 
         // Get the mappedPatchBase
         const mappedPatchBase& mpp = refCast<const mappedPatchBase>
@@ -303,13 +309,13 @@ void Foam::surfaceShearStressFvPatchField::evaluate(const Pstream::commsTypes)
 
         scalar zRef = normal[faceI] & offset;
       //Info << "zRef = " << zRef << endl;
-        List<scalar> fluxes = fluxProfileRel.update(zRef, U, nu, B, kappa, 300.0);
+        List<scalar> fluxes = fluxProfileRel.update(zRef, U, kappa, B, nu);
         scalar utau = fluxes[0];
         utauMean += utau * area[faceI];
 
         Rw[faceI] = Zero;
-        Rw[faceI].xz() = -Foam::sqr(utau) * (u / U);
-        Rw[faceI].yz() = -Foam::sqr(utau) * (v / U);
+        Rw[faceI].xz() = -normal[faceI].z() * Foam::sqr(utau) * (u / U);
+        Rw[faceI].yz() = -normal[faceI].z() * Foam::sqr(utau) * (v / U);
     }
 
     reduce(utauMean,sumOp<scalar>());
@@ -579,10 +585,18 @@ void Foam::surfaceShearStressFvPatchField::write(Ostream& os) const
     os.writeKeyword("kappa") << kappa << token::END_STATEMENT << nl;
   //z0.writeEntry("z0", os);
   //os.writeKeyword("z0") << z0 << token::END_STATEMENT << nl;
-    z0.writeEntry("z0", os);
     os.writeKeyword("beta_m") << beta_m << token::END_STATEMENT << nl;
-    os.writeKeyword("gamma_n") << gamma_m << token::END_STATEMENT << nl;
+    os.writeKeyword("beta_h") << beta_h << token::END_STATEMENT << nl;
+    os.writeKeyword("gamma_m") << gamma_m << token::END_STATEMENT << nl;
+    os.writeKeyword("gamma_h") << gamma_h << token::END_STATEMENT << nl;
+    os.writeKeyword("alpha_h") << alpha_h << token::END_STATEMENT << nl;
+    os.writeKeyword("B") << B << token::END_STATEMENT << nl;
+    os.writeKeyword("nu") << nu << token::END_STATEMENT << nl;
+    os.writeKeyword("fluxProfileRelationType") << fluxProfileRelTypeName << token::END_STATEMENT << nl;
     os.writeKeyword("averageType") << avgTypeName << token::END_STATEMENT << nl;
+    os.writeKeyword("fluctuationModel") << fluctModelName << token::END_STATEMENT << nl;
+    os.writeKeyword("interpolationScheme") << interpolationScheme << token::END_STATEMENT << nl;
+    z0.writeEntry("z0", os);
     writeEntry("value", os);
 }
 

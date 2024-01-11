@@ -86,6 +86,9 @@ private:
         //- Roughness height (which can be space varying).
         scalarField z0;
 
+        //- Type of flux profile relation to use.
+        word fluxProfileRelTypeName;
+
         //- Type of averaging used on velocity/temperature before passing to flux 
         //  profile relations.
         //  Options are:
