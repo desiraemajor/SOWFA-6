@@ -92,7 +92,7 @@ surfaceShearStressFvPatchField
     avgType(averagingType::NONE),
     fluctModelName(dict.lookupOrDefault<word>("fluctuationModel","none")),
     fluctModel(fluctuationModel::NONE),
-    nu(8.0E-6),
+    nu(dict.lookupOrDefault<scalar>("nu",8.0E-6)),
     interpolationScheme(dict.lookupOrDefault<word>("interpolationScheme","cell"))
 {
     if (dict.found("z0"))
