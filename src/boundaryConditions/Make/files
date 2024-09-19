@@ -14,5 +14,10 @@ $(surfaceHeatFluxModels)/specifiedSurfaceTemperature/specifiedSurfaceTemperature
 inflowOutflow = ./inflowOutflow
 $(inflowOutflow)/timeVaryingMappedInletOutlet/timeVaryingMappedInletOutletFvPatchFields.C
 
+/* Mapped Coded Mixed Boundary Condition */
+/*mappedCodedMixed = ./mappedCodedMixed*/
+/*$(mappedCodedMixed)/mappedCodedMixedFvPatchFields.C*/
+mappedCodedMixed/mappedCodedMixedFvPatchFields.C
+
 
 LIB = $(SOWFA_LIBBIN)/libSOWFAboundaryConditions
