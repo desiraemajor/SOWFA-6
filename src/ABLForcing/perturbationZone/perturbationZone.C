@@ -457,6 +457,7 @@ void Foam::perturbationZone<Type>::createPerturbationCells()
         // In case perturbation horizontal slabs are updated independently in time,
         // size the updatePeriodSlab_ variable accordingly.
         updatePeriodSlab_[m].setSize(dims_[m][2]);
+	updatePeriodSlab_[m] = 0.0;
         lastUpdateTimeSlab_[m].setSize(dims_[m][2],t_-VGREAT);
     }
 }
@@ -972,6 +973,10 @@ void Foam::perturbationZone<Type>::update()
                     Info << "updatePeriod = " << updatePeriod_[m] << endl;
                 }
 
+		// If the flow is opposing the boundary normal direction, the update period will be negative
+		// and perturbations won't be applied (i.e., if it is outflow, perturbations are not applied).
+		// However, currently, this doesn't look locally over the boundary in the case that you have
+		// mixed inflow and outflow.
                 if (updatePeriod_[m] >= 0.0)
                 {
                     updateCellFluctuations(m);
@@ -1031,6 +1036,10 @@ void Foam::perturbationZone<Type>::update()
                     Info << "vel = " << vel << tab << "d = " << d << tab << "mag(d) = " << mag_d << tab << "(vel & n) = " << (vel & n) << endl;
                     Info << "updatePeriod = " << updatePeriodSlab_[m][k] << endl;       
 
+		    // If the flow is opposing the boundary normal direction, the update period will be negative
+		    // and perturbations won't be applied (i.e., if it is outflow, perturbations are not applied).
+		    // However, currently, this doesn't look locally over the boundary in the case that you have
+		    // mixed inflow and outflow.
                     if (updatePeriodSlab_[m][k] >= 0.0)
                     {
                         updateCellFluctuations(m,k);
