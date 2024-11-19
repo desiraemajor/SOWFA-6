@@ -31,7 +31,7 @@ FC      = ifx
 #    module use /nopt/nrel/apps/base/2020-05-12/spack/share/spack/modules/linux-centos7-x86_64/gcc-8.4.0
 #    module load netcdf-fortran/4.5.2
 #NETCDFPATH       = /nopt/nrel/apps/base/2020-05-12/spack/opt/spack/linux-centos7-x86_64/gcc-8.4.0/netcdf-fortran-4.5.2-m5vrrmxyic734hpgy33eeirurufw3ogh
-NETCDFPATH       = /home/mchurchf/software-2024-03/spack/opt/spack/linux-rhel8-sapphirerapids/oneapi-2023.2.0/netcdf-fortran-4.5.2-ebrxi6jgymlvskxabuc5x4wa46ixxch6
+NETCDFPATH       = /home/mchurchf/software-2024-03/spack.oneapi-2023.2.0/opt/spack/linux-rhel8-sapphirerapids/oneapi-2023.2.0/netcdf-fortran-4.5.2-2clnemwizgln33pvtln4kwf76maahp2c
 #
 ############
 #

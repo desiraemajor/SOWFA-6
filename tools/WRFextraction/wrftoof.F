@@ -18,6 +18,7 @@ PROGRAM toof
    LOGICAL :: ic, ctrl, have_hfx, use_hfx  ! whether or not to do an IC file too
    LOGICAL :: read_latlong ! read XLAT and XLONG from a separate file if its not in the provided solution file
    LOGICAL :: read_phb ! read PH and PHB from a separate file if its not in the provided solution file (dmajor: added 7/15/24)
+   LOGICAL :: idealSim ! tell the routine that latitude/longitude not provided from WRF, build cartesian grid instead (dmajor: added 8/13/24)
    LOGICAL :: input_rotation_angle, check_inflow
    INTEGER :: it,ncid(MAXFILES),stat,iarg,narg,varid,strt(4),cnt(4),xtype,storeddim,dimids(4),natts,latlongid,phbid	!(dmajor: added phbid 7/15/24)
    REAL, EXTERNAL :: finterp
@@ -64,9 +65,10 @@ PROGRAM toof
    ic = .FALSE.
    use_hfx = .FALSE.
    read_latlong = .FALSE.
-   read_phb = .FALSE.			!(dmajor: added bool to read for ph/phb file 7/15/24)
    input_rotation_angle = .FALSE.
    check_inflow = .FALSE.
+   read_phb = .FALSE.			!(dmajor 7/15/24: added bool to read for ph/phb file)
+   idealSim = .FALSE.			!(dmajor 8/13/24: added bool for command line option to specify ideal WRF simulation)
 
    it = 1
    sec_offset = 0
@@ -114,6 +116,8 @@ PROGRAM toof
          input_rotation_angle = .TRUE.
        ELSE IF ( TRIM(arg) .EQ. '-checkInflow' ) THEN
          check_inflow = .TRUE.
+       ELSE IF ( TRIM(arg) .EQ. '-idealSim' ) THEN	!(dmajor 8/13/24: added flag to check for ideal Sim input)
+         idealSim = .TRUE.
        ENDIF
      ELSE
        nfiles = nfiles + 1
@@ -235,22 +239,18 @@ PROGRAM toof
      ! Assume XLAT and XLONG are identical for all input files
      CALL getvar_real(ctrl,latlongid,1,'XLAT' ,xlat ,it,2,ips,ipe-1,jps,jpe-1,1,1)
      CALL getvar_real(ctrl,latlongid,1,'XLONG',xlong,it,2,ips,ipe-1,jps,jpe-1,1,1)
-   ELSE
-     ! Original operation
-     CALL getvar_real(ctrl,ncid,nfiles,'XLAT' ,xlat ,it,2,ips,ipe-1,jps,jpe-1,1,1)
-     CALL getvar_real(ctrl,ncid,nfiles,'XLONG',xlong,it,2,ips,ipe-1,jps,jpe-1,1,1)
-
-     ! If XLAT, XLONG not found, its probably an ideal sim - reconstruct cartesian grid (dmajor 8/5/24)
-     IF ( .NOT. ctrl) THEN
-       write(*,*) 'Did not find XLAT/XLONG... building cartesian grid.'
-       ctrl = .TRUE.  ! reset ctrl for later
+   ELSE IF ( idealSim ) THEN	!(dmajor 8/15/24: added conditional to build cartesian grid from DX, DY if ideal WRF sim)
+     write(*,*) 'Ideal WRF simulation... building cartesian grid.'
        DO i=ips,ipe-1
          DO j=jps,jpe-1
            xlat(i,j) = (j-1)*dy
            xlong(i,j) = (i-1)*dx
          ENDDO
        ENDDO
-     ENDIF
+   ELSE
+     ! Original operation
+     CALL getvar_real(ctrl,ncid,nfiles,'XLAT' ,xlat ,it,2,ips,ipe-1,jps,jpe-1,1,1)
+     CALL getvar_real(ctrl,ncid,nfiles,'XLONG',xlong,it,2,ips,ipe-1,jps,jpe-1,1,1)
    END IF
 
    if ( .NOT. input_rotation_angle ) then
@@ -262,8 +262,8 @@ PROGRAM toof
    costheta = cos(theta)
    sintheta = sin(theta)
 
-   !ALLOCATE(    p(ips:ipe-1,jps:jpe-1,kps:kpe-1))
-   !ALLOCATE(   pb(ips:ipe-1,jps:jpe-1,kps:kpe-1))
+   ALLOCATE(    p(ips:ipe-1,jps:jpe-1,kps:kpe-1))
+   ALLOCATE(   pb(ips:ipe-1,jps:jpe-1,kps:kpe-1))
    ALLOCATE(   ph(ips:ipe-1,jps:jpe-1,kps:kpe  ))
    ALLOCATE(  phb(ips:ipe-1,jps:jpe-1,kps:kpe  ))
    ALLOCATE(   zz(ips:ipe-1,jps:jpe-1,kps:kpe  )) ! height
@@ -279,13 +279,13 @@ PROGRAM toof
    ALLOCATE( zcol(0:1,0:1,kps:kpe-1))
    ALLOCATE(   hfx(ips:ipe-1,jps:jpe-1))
 
-   !p = 0.
-   !pb = 0.
+   p = 0.
+   pb = 0.
    ph = 0.
    phb = 0.
    zz  = 0.
    w  = 0.
-   !pres  = 0.
+   pres  = 0.
    z  = 0.
    t  = 0.
    u  = 0.
@@ -311,10 +311,12 @@ PROGRAM toof
        CALL getvar_real(ctrl,phbid,1,'PH_1',ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe)
      ENDIF
      CALL getvar_real(ctrl,phbid,1,'PHB',phb,it,3,ips,ipe-1,jps,jpe-1,kps,kpe)
+     CALL getvar_real(ctrl,phbid,1,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
    ELSE
      ! Original operation
      CALL getvar_real(ctrl,ncid,nfiles,'PH' ,ph ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
      CALL getvar_real(ctrl,ncid,nfiles,'PHB',phb,it,3,ips,ipe-1,jps,jpe-1,kps,kpe  )
+     CALL getvar_real(ctrl,ncid,nfiles,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
    END IF
 
 
@@ -322,8 +324,7 @@ PROGRAM toof
    CALL getvar_real(ctrl,ncid,nfiles,'T'  ,t  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
    CALL getvar_real(ctrl,ncid,nfiles,'U'  ,u_ ,it,3,ips,ipe  ,jps,jpe-1,kps,kpe-1)
    CALL getvar_real(ctrl,ncid,nfiles,'V'  ,v_ ,it,3,ips,ipe-1,jps,jpe  ,kps,kpe-1)
-   !CALL getvar_real(ctrl,ncid,nfiles,'P'  ,p  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
-   !CALL getvar_real(ctrl,ncid,nfiles,'PB' ,pb ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
+   CALL getvar_real(ctrl,ncid,nfiles,'P'  ,p  ,it,3,ips,ipe-1,jps,jpe-1,kps,kpe-1)
 
 
    have_hfx = .FALSE.  ! false value going in says this field is required
@@ -335,7 +336,7 @@ PROGRAM toof
    u    = (u_(ips:ipe-1,:,:)+u_(ips+1:ipe,:,:))*0.5
    v    = (v_(:,jps:jpe-1,:)+v_(:,jps+1:jpe,:))*0.5
 
-   !pres = p + pb
+   pres = p + pb
 
    t    = t+300.
 
@@ -444,7 +445,7 @@ PROGRAM toof
          u_new    = finterp(u   ,zcol ,xlat,xlong,kz ,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe-1, ips,ipe-1,jps,jpe-1)
          v_new    = finterp(v   ,zcol ,xlat,xlong,kz ,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe-1, ips,ipe-1,jps,jpe-1)
          t_new    = finterp(t   ,zcol ,xlat,xlong,kz ,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe-1, ips,ipe-1,jps,jpe-1)
-         !pres_new = finterp(pres,zzcol,xlat,xlong,kzz,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe-1, ips,ipe-1,jps,jpe-1)
+         pres_new = finterp(pres,zzcol,xlat,xlong,kzz,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe-1, ips,ipe-1,jps,jpe-1)
 
          !variables on full-levels                    open foam coords        dims of field                  dims of lat lon arrays
          w_new    = finterp(w   ,zzcol,xlat,xlong,kzz,of_lat,of_lon,of_lz,i,j,ips,ipe-1,jps,jpe-1,kps,kpe  , ips,ipe-1,jps,jpe-1)
@@ -457,14 +458,14 @@ PROGRAM toof
          !t_new    =  t_new  * ( (pres_new / P1000MB)**(R_D/CP))
          !t_ground =  t(i,j,1) * ( (pres(i,j,1) / P1000MB)**(R_D/CP))
 #else
-         !t_ground =  t(i,j,1)
+         t_ground =  t(i,j,1)
 #endif
 
            ! compute "pd" which is defined as pressure divided by density at surface minus geopotential
            ! that is, pd = p / rho - g*z .  Note, however, that we don.t have density so compute density at
            ! surface as rho0 = p0 / (R*T0), where R is 286.9 and T0 is surface temp. Substituting for rho
            ! into the above, this becomes:
-         !pd = (pres_new*R_D*t_ground)/pres(i,j,1) - g * of_lz
+           !pd = (pres_new*R_D*t_ground)/pres(i,j,1) - g * of_lz
 
          IF ( ibdy .EQ. BDY_ZS .AND. have_hfx .AND. use_hfx ) THEN
            kzz = 0 ! turn off vertical interpolation in call to finterp
@@ -484,18 +485,18 @@ PROGRAM toof
 
        ENDDO
         ! close the unit and then run a system command to strip off the first space that Fortran insists on writing
-       CALL write_trailer_T(76,ibdy.EQ.INTERIOR) ; CLOSE( 76 ) ; & 
+       CALL write_trailer_T(76,ibdy.EQ.INTERIOR) ; CLOSE( 76 ) ;  
             comstr = "sed 's/^ //' "//TRIM(outnameT) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameT)
        CALL system(TRIM(comstr)) 
-       !CALL write_trailer_pd(77,ibdy.EQ.INTERIOR) ; CLOSE( 77 ) ; & 
+       !CALL write_trailer_pd(77,ibdy.EQ.INTERIOR) ; CLOSE( 77 ) ;  
        !     comstr = "sed 's/^ //' "//TRIM(outnamePd) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnamePd)
        !CALL system(TRIM(comstr)) 
-       CALL write_trailer_U(78,ibdy.EQ.INTERIOR) ;  CLOSE( 78 ) ; & 
+       CALL write_trailer_U(78,ibdy.EQ.INTERIOR) ;  CLOSE( 78 ) ;  
             comstr = "sed 's/^ //' "//TRIM(outnameU) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameU)
        CALL system(TRIM(comstr)) 
        IF ( ibdy .EQ. BDY_ZS .AND. have_hfx .AND. use_hfx ) THEN
-         CALL write_trailer_HFX(79,.FALSE.) ;  CLOSE( 79 ) ; & 
-              comstr = "sed 's/^ //' "//TRIM(outnameU) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameU)
+         CALL write_trailer_HFX(79,.FALSE.) ;  CLOSE( 79 ) ;  
+              comstr = "sed 's/^ //' "//TRIM(outnameHFX) //"> foo_ ; /bin/mv -f foo_ "// TRIM(outnameHFX)
          CALL system(TRIM(comstr)) 
        ENDIF
      ENDIF
@@ -560,6 +561,8 @@ SUBROUTINE help
    WRITE(*,'("       -qwall        program should generate temp flux in lower bc file")')
    WRITE(*,'("       -rotation     use specified rotation angle [deg] instead of calculating from XLAT")')
    WRITE(*,'("       -checkInflow  instead of generating boundary data, check inflow/outflow only",/)')
+   WRITE(*,'("       -read_phb     read PH/PHB data from external file if not provided in ncdfile",/)')
+   WRITE(*,'("       -idealSim     instead of using latitude/longitude, build cartesian grid for ideal WRF simulation",/)')
    STOP
 END SUBROUTINE help
 
@@ -625,7 +628,7 @@ SUBROUTINE write_header_scalar( unit, n, bc , location, objectname )
    CHARACTER*(*),  INTENT(IN) :: objectname
 
    if ( .NOT. bc ) THEN
-     WRITE(unit,*)'/*---------------------------------------------------------------------------*\'
+     WRITE(unit,*)' /*---------------------------------------------------------------------------*\ '
      WRITE(unit,*)'=========                 |                                                    '
      WRITE(unit,*)'\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox              '
      WRITE(unit,*)' \\    /   O peration     | Website:  https://openfoam.org                     '
@@ -666,7 +669,7 @@ SUBROUTINE write_header_vector( unit, n, bc, location, objectname )
    CHARACTER*(*),  INTENT(IN) :: objectname
 
    IF ( .NOT. bc ) THEN
-     WRITE(unit,*)'/*---------------------------------------------------------------------------*\'
+     WRITE(unit,*)' /*---------------------------------------------------------------------------*\ '
      WRITE(unit,*)'=========                 |                                                    '
      WRITE(unit,*)'\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox              '
      WRITE(unit,*)' \\    /   O peration     | Website:  https://openfoam.org                     '
@@ -709,11 +712,10 @@ SUBROUTINE write_trailer_U ( unit, interior )
      WRITE(unit,*)'{'
      WRITE(unit,*)'    lower'
      WRITE(unit,*)'    {'
-    !WRITE(unit,*)'        type            velocityABLWallFunction;'
-    !WRITE(unit,*)'        print           1;'
-    !WRITE(unit,*)'        U               U;'
-    !WRITE(unit,*)'        value           uniform (0 0 0);'
-     WRITE(unit,*)'        type            slip;'
+     WRITE(unit,*)'        type            velocityABLWallFunction;'
+     WRITE(unit,*)'        print           true;'
+     WRITE(unit,*)'        U               U;'
+     WRITE(unit,*)'        value           uniform ( 0 0 0 );'
      WRITE(unit,*)'    }'
      WRITE(unit,*)'    upper'
      WRITE(unit,*)'    {'
