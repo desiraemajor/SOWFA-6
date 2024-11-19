@@ -37,7 +37,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
 :
   //fixedValueFvPatchField<Type>(p, iF),
     codedMixedFvPatchField<Type>(p, iF),
-    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this)
+    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this),
+    window_(1.0)
 {}
 
 
@@ -51,7 +52,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
 :
   //fixedValueFvPatchField<Type>(p, iF, dict),
     codedMixedFvPatchField<Type>(p, iF, dict),
-    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, dict)
+    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, dict),
+    window_(readScalar(dict.lookup("window")))
 {}
 
 
@@ -66,7 +68,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
 :
   //fixedValueFvPatchField<Type>(ptf, p, iF, mapper),
     codedMixedFvPatchField<Type>(ptf, p, iF, mapper),
-    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, ptf)
+    mappedPatchFieldBase<Type>(this->mapper(p, iF), *this, ptf),
+    window_(ptf.window_)
 {}
 
 
@@ -78,7 +81,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
 :
   //fixedValueFvPatchField<Type>(ptf),
     codedMixedFvPatchField<Type>(ptf),
-    mappedPatchFieldBase<Type>(ptf)
+    mappedPatchFieldBase<Type>(ptf),
+    window_(ptf.window_)
 {}
 
 
@@ -91,7 +95,8 @@ Foam::mappedCodedMixedFvPatchField<Type>::mappedCodedMixedFvPatchField
 :
   //fixedValueFvPatchField<Type>(ptf, iF),
     codedMixedFvPatchField<Type>(ptf, iF),
-    mappedPatchFieldBase<Type>(this->mapper(this->patch(), iF), *this, ptf)
+    mappedPatchFieldBase<Type>(this->mapper(this->patch(), iF), *this, ptf),
+    window_(ptf.window_)
 {}
 
 
@@ -125,9 +130,7 @@ void Foam::mappedCodedMixedFvPatchField<Type>::updateCoeffs()
         return;
     }
 
-    Field<Type> sampledField = this->mappedField();
-
-  //This part set the inflow value to the sampled value,
+   //This part set the inflow value to the sampled value,
   //but we don't want that.  Now this BC should act just
   //like a codedMixed BC until we modify it, but we at
   //least have access to the sampled field now.
@@ -145,7 +148,28 @@ void Foam::mappedCodedMixedFvPatchField<Type>::updateCoeffs()
     }
 
   //fixedValueFvPatchField<Type>::updateCoeffs();
-    codedMixedFvPatchField<Type>::updateCoeffs();
+    codedMixedFvPatchField<Type>::updateCoeffs(); // is this where the code part of the BC get evaluated?
+
+    // Grab the upstream information
+    Field<Type> sampledField = this->mappedField();
+
+    //Initialize the sampledFieldAvg with the first sampled value
+    if (this->db().time().value() == this->db().time().startTime().value())
+    {
+        sampledFieldAvg = sampledField;    
+    }
+    else
+    {
+        //Begin calculating the backward time-average
+        scalar dt = this->db().time().deltaTValue();
+        scalar beta = dt/window_;
+        sampledFieldAvg = (1 - beta)*sampledFieldAvg + beta*sampledField;
+    }
+
+    Field<Type> perturbation = sampledField - sampledFieldAvg;
+
+    this->refValue() += perturbation;
+    
 }
 
 
@@ -155,7 +179,9 @@ void Foam::mappedCodedMixedFvPatchField<Type>::write(Ostream& os) const
     fvPatchField<Type>::write(os);
     mappedPatchFieldBase<Type>::write(os);
     codedMixedFvPatchField<Type>::write(os);
-  //this->writeEntry("value", os);
+    os.writeKeyword("window") << window_ << token::END_STATEMENT << nl;
+ 
+  //this->refValue().writeEntry("refValue", os);
 }
 
 

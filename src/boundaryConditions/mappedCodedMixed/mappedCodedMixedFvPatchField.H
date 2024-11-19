@@ -110,6 +110,14 @@ protected:
             const DimensionedField<Type, volMesh>& iF
         );
 
+    // Private data
+
+        //- Interpolated values from startSampleTime
+        Field<Type> sampledFieldAvg;
+
+        // -Constant for time-averaging window
+        scalar window_;
+
 
 public:
 
