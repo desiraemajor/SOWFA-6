@@ -184,6 +184,13 @@ class perturbationZone
         //                         perturbation slab (i.e., local flow through time per slab)
             List<word> updateMode_;
 
+	//- A scalar multiplier on update period.  This defaults to 1.0, but it can be helpful
+	//  if you have flow that varies greatly across the boundary and you are using slabLocalWind.
+	//  For example, if flow speed is small on one side and large on the other, the update period.
+	//  will depend on the middle speed, so it won't update fast enough for the fast flow, so one
+	//  may want to set this to 0.5
+	    List<scalar> updatePeriodScalar_;
+
         //- Height at which to measure wind velocity for determining update frequency if 
         //  "updateMode" is "windAtHeight."  This is a table of height versus time, for example,
         //  if you want to have the height follow a time-varying boundary-layer height.
