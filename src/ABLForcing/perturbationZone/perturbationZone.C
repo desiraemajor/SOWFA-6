@@ -74,6 +74,7 @@ void Foam::perturbationZone<Type>::initialize()
     updateMode_.setSize(nZones_);
     updatePeriod_.setSize(nZones_);
     updatePeriodSlab_.setSize(nZones_);
+    updatePeriodScalar_.setSize(nZones_);
     PBLHeight_.setSize(nZones_);
     applicationMode_.setSize(nZones_);
     clipAtTwoThirdsPBLHeight_.setSize(nZones_);
@@ -133,6 +134,8 @@ void Foam::perturbationZone<Type>::readSubDict()
         EckertNumber_[m] = subSubDict.lookupOrDefault<scalar>("EckertNumber",0.2);
 
         updateMode_[m] = subSubDict.lookupOrDefault<word>("updateMode","fixedFrequency");
+
+	updatePeriodScalar_[m] = subSubDict.lookupOrDefault<scalar>("updatePeriodScalar",1.0);
 
         if (subSubDict.found("PBLHeight"))
         {
@@ -457,6 +460,7 @@ void Foam::perturbationZone<Type>::createPerturbationCells()
         // In case perturbation horizontal slabs are updated independently in time,
         // size the updatePeriodSlab_ variable accordingly.
         updatePeriodSlab_[m].setSize(dims_[m][2]);
+	updatePeriodSlab_[m] = 0.0;
         lastUpdateTimeSlab_[m].setSize(dims_[m][2],t_-VGREAT);
     }
 }
@@ -966,12 +970,16 @@ void Foam::perturbationZone<Type>::update()
                     vector n = d/mag_d;
 
                     Info << "updatePeriod = " << updatePeriod_[m] << endl;
-                    updatePeriod_[m] = mag_d/(max(mag(vel & n),1.0E-6)*sign(vel & n));
+                    updatePeriod_[m] = updatePeriodScalar_[m] * (mag_d/(max(mag(vel & n),1.0E-6)*sign(vel & n)));
 
                     Info << "vel = " << vel << tab << "d = " << d << tab << "mag(d) = " << mag_d << tab << "(vel & n) = " << (vel & n) << endl;
                     Info << "updatePeriod = " << updatePeriod_[m] << endl;
                 }
 
+		// If the flow is opposing the boundary normal direction, the update period will be negative
+		// and perturbations won't be applied (i.e., if it is outflow, perturbations are not applied).
+		// However, currently, this doesn't look locally over the boundary in the case that you have
+		// mixed inflow and outflow.
                 if (updatePeriod_[m] >= 0.0)
                 {
                     updateCellFluctuations(m);
@@ -1026,11 +1034,15 @@ void Foam::perturbationZone<Type>::update()
                     vector vel = velAvg[k];
 
                     Info << "updatePeriod = " << updatePeriodSlab_[m][k] << endl;
-                    updatePeriodSlab_[m][k] = mag_d/(max(mag(vel & n),1.0E-6)*sign(vel & n));
+                    updatePeriodSlab_[m][k] = updatePeriodScalar_[m] * (mag_d/(max(mag(vel & n),1.0E-6)*sign(vel & n)));
 
                     Info << "vel = " << vel << tab << "d = " << d << tab << "mag(d) = " << mag_d << tab << "(vel & n) = " << (vel & n) << endl;
                     Info << "updatePeriod = " << updatePeriodSlab_[m][k] << endl;       
 
+		    // If the flow is opposing the boundary normal direction, the update period will be negative
+		    // and perturbations won't be applied (i.e., if it is outflow, perturbations are not applied).
+		    // However, currently, this doesn't look locally over the boundary in the case that you have
+		    // mixed inflow and outflow.
                     if (updatePeriodSlab_[m][k] >= 0.0)
                     {
                         updateCellFluctuations(m,k);
