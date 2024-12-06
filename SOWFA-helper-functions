@@ -10,7 +10,7 @@ mkLogsDir()
 
 
 # Local refinement performed on one core.
-refineMeshLocalSerial()
+refineMeshAndSolutionLocalSerial()
 {
    # Refine selected portions of the mesh.  For each refinement step, use topoSet to
    # select regions of the mesh defined in files "system/topoSet/topoSetDict.local.N"
@@ -39,8 +39,37 @@ refineMeshLocalSerial()
 
 
 
-
 # Global refinement performed in parallel.
+refineMeshAndSolutionGlobalParallel()
+{
+   # Refine the entire mesh.  For each refinement step, use topoSet to
+   # select the entire mesh defined in files "system/topoSet/topoSetDict.global"
+   # where N is the integer refinement step.  We call the base mesh created with blockMesh
+   # the level 0 mesh, so any refinement starts at level 1.  Once the grid cells are, 
+   # selected, refineHexMesh is used to cut the selected grid cells in half in each 
+   # direction and to update the solution file to reflect the refinement.
+
+   # Make a directory in which to collect log files.
+   mkLogsDir
+
+   # Enter the topoSet followed by refineHexMesh cycle.
+   i=1
+   while [ $i -le $1 ]
+   do
+      echo "   -Performing level $i global refinement with topoSet/refineHexMesh"
+      echo "      *selecting cells to refine..."
+      srun -n $2 --cpu_bind=cores --mpi=pmi2 topoSet -dict system/topoSet/topoSetDict.global -parallel > logs/log.topoSet.global.level$i 2>&1
+
+      echo "      *refining cells..."
+      srun -n $2 --cpu_bind=cores --mpi=pmi2 refineHexMesh global -parallel -overwrite > logs/log.refineHexMesh.global.level.$i 2>&1
+
+      let i=i+1
+   done
+}
+
+
+
+# Global mesh refinement performed in parallel.
 refineMeshGlobalParallel()
 {
    # Refine all mesh cells by as many levels as specified, cutting each cell in
@@ -54,7 +83,7 @@ refineMeshGlobalParallel()
    do
       echo "   -Performing level $i global refinement with refineMesh"
       echo "      *refining cells..."
-      mpirun -np $cores refineMesh -all -parallel -overwrite > logs/log.refineMesh.global.$i 2>&1
+      mpirun -np $2 refineMesh -all -parallel -overwrite > logs/log.refineMesh.global.$i 2>&1
 
       let i=i+1
    done
