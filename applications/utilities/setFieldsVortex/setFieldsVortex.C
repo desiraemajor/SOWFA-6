@@ -97,8 +97,18 @@ IOdictionary dict
 
 
 // Read in the dict entries.
+scalar deltaU(dict.lookupOrDefault<scalar>("deltaU",1.0));
+scalar deltaV(dict.lookupOrDefault<scalar>("deltaV",1.0));
+scalar zPeak(dict.lookupOrDefault<scalar>("zPeak",0.03));
+scalar Uperiods(round(dict.lookupOrDefault<scalar>("Uperiods",4)));
+scalar Vperiods(round(dict.lookupOrDefault<scalar>("Vperiods",4)));
 scalar xMin(dict.lookupOrDefault<scalar>("xMin",0.0));
 scalar yMin(dict.lookupOrDefault<scalar>("yMin",0.0));
+scalar zMin(dict.lookupOrDefault<scalar>("zMin",0.0));
+scalar xMax(dict.lookupOrDefault<scalar>("xMax",3000.0));
+scalar yMax(dict.lookupOrDefault<scalar>("yMax",3000.0));
+scalar zMax(dict.lookupOrDefault<scalar>("zMax",1000.0));
+word velocityInitType(dict.lookup("velocityInitType"));
 bool updateInternalFields(dict.lookupOrDefault<bool>("updateInternalFields",true));
 bool updateBoundaryFields(dict.lookupOrDefault<bool>("updateBoundaryFields",false));
 
@@ -112,6 +122,11 @@ scalar Rpeak(dict.lookupOrDefault<scalar>("Rpeak",1000.0));
 scalar Uc(dict.lookupOrDefault<scalar>("Uc",0.0));
 scalar Vc(dict.lookupOrDefault<scalar>("Vc",0.0));
 
+// Compute the domain extents.
+scalar xExtent = xMax - xMin;
+scalar yExtent = yMax - yMin;
+scalar zExtent = zMax - zMin;
+
 
 // Update the interior fields.
 if (updateInternalFields)
@@ -122,7 +137,17 @@ if (updateInternalFields)
     {
         scalar x = mesh.C()[cellI].x() - xMin;
         scalar y = mesh.C()[cellI].y() - yMin;
+        scalar z = mesh.C()[cellI].z() - zMin;
         
+	// Calculate perturbations
+	vector UPrime = vector::zero;
+        UPrime.x() = deltaU * Foam::exp(0.5) * Foam::cos(Uperiods * 2.0 * Foam::constant::mathematical::pi * y/yExtent) * 
+                    (z/(zPeak*zExtent)) * Foam::exp(-0.5*Foam::pow((z/(zPeak*zExtent)),2));
+        UPrime.y() = deltaV * Foam::exp(0.5) * Foam::sin(Vperiods * 2.0 * Foam::constant::mathematical::pi * x/xExtent) * 
+                    (z/(zPeak*zExtent)) * Foam::exp(-0.5*Foam::pow((z/(zPeak*zExtent)),2));
+        UPrime.z() = 0.0;
+
+
 	// Calculate the local radius and tangential velocity
 	// Tangential velocity includes a peak velocity radius correction from Davenport et al. 1996 (12% offset)
 	scalar r = Foam::pow(Foam::pow((x - xc),2) + Foam::pow((y - yc),2),0.5);
@@ -135,6 +160,12 @@ if (updateInternalFields)
        	// Compute velocity components for the Lamb-Oseen Vortex
         U[cellI].x() = -u_theta*Foam::sin(thetaU) + Uc;
 	U[cellI].y() =  u_theta*Foam::cos(thetaV) + Vc;
+	U[cellI].z() = 0.0;
+
+	if( velocityInitType == "perturbations")
+        {
+            U[cellI] += UPrime;
+        }
      }
 }
 
