@@ -561,7 +561,8 @@ SUBROUTINE help
    WRITE(*,'("       -qwall        program should generate temp flux in lower bc file")')
    WRITE(*,'("       -rotation     use specified rotation angle [deg] instead of calculating from XLAT")')
    WRITE(*,'("       -checkInflow  instead of generating boundary data, check inflow/outflow only",/)')
-   WRITE(*,'("       -read_phb     read PH/PHB data from external file if not provided in ncdfile",/)')
+   WRITE(*,'("       -latlong      read XLAT/XLONG data from external file if not provided in ncdfile",/)')
+   WRITE(*,'("       -phbfile      read PH/PHB data from external file if not provided in ncdfile",/)')
    WRITE(*,'("       -idealSim     instead of using latitude/longitude, build cartesian grid for ideal WRF simulation",/)')
    STOP
 END SUBROUTINE help
